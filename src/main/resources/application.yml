@@ -1,0 +1,61 @@
+server:
+  port: 7777
+spring:
+  application:
+    name: shardingSphere-jdbc
+  #shardingsphere
+  shardingsphere:
+    sharding:
+      tables:
+        t_order:
+          key-generator:
+            column: id
+            type: SNOWFLAKE
+          database-strategy:
+            inline:
+              sharding-column: id
+              algorithm-expression: ds$->{id %2}
+          actual-data-nodes: ds$->{0..1}.t_order_1
+        user:
+          #配置id生成策略为雪花算法snowflake
+          key-generator:
+            column: id
+            type: SNOWFLAKE
+          #数据库分片策略：根据id%2的值来判定入哪个库
+          database-strategy:
+            inline:
+              sharding-column: id
+              algorithm-expression: ds$->{id %2}
+          #表分片策略，根据user_id%2的值来判定入哪个表
+          table-strategy:
+            inline:
+              sharding-column: user_id
+              algorithm-expression: user_$->{user_id %2}
+          actual-data-nodes: ds$->{0..1}.user_$->{0..1}
+    #配置数据源
+    datasource:
+      names: ds0,ds1
+      ds0:
+        type: com.alibaba.druid.pool.DruidDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://localhost:3306/sharding_sphere_0
+        username: root
+        password: xxxx
+
+      ds1:
+        type: com.alibaba.druid.pool.DruidDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://localhost:3306/sharding_sphere_1
+        username: root
+        password: xxxx
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.drbit.domain
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
